@@ -47,18 +47,15 @@ function genDevPlane()
 	GenFuncImage(sndGen, imgOpts)
 end
 
-function genDGraph()
-	x = 0:0.25:5.0
-	freqRange = (63.0, 65.0)
-	xRange = (-3.0, 3.0)
-	yRange = (0.0, 5.0)
-	plotFunc(d) = TwoSourceSound.calcAvgPlaneAmplitudeDev(d, freqRange, xRange, yRange)
+function genDGraph(freqRange::Tuple{Float64, Float64}, xRange::Tuple{Float64, Float64}, yRange::Tuple{Float64, Float64}, maxDist::Float64 = 10.0, precision::Float64=0.1)
+	x = 0:0.1:maxDist
+	plotFunc(d) = TwoSourceSound.calcAvgPlaneAmplitudeDev_CUDA(d, freqRange, xRange, yRange)
 
 	y = Array{Float64}(undef, length(x))
 	donecnt = 0.0
 	timeStart = round(time())
-
-	Threads.@threads for i in 1:length(x)
+#Threads.@threads 
+	for i in 1:length(x)
 		y[i] = plotFunc(x[i])
 		donecnt += 1
 		println("$(@sprintf("%.2f", donecnt / length(x) * 100))%")
@@ -74,9 +71,10 @@ function genDGraph()
 
 	title = "f ∈ $(freqStr); x ∈ $(xRangeStr); y ∈ $(yRangeStr)"
 	plot(x, y, xlabel="d, m", ylabel="A", title=title)
-	savefig("plot")
+	savefig("plot-F$(Int(freqRange[1])):$(Int(freqRange[2]))Hz-X$(Int(xRange[1])):$(Int(xRange[2]))m-Y$(Int(yRange[1])):$(Int(yRange[2]))m-D:$(Int(maxDist))m")
 end
 
-genDGraph()
+print(TwoSourceSound.calcAvgPlaneAmplitudeDev(5.0, (63.0, 127.0), (0.0, 1.0), (0.0, 1.0)))
+# genDGraph((63.0, 65.0), (-3.0, 3.0), (0.0, 3.0), 5.0)
 # genDevPlane()
 # genFreqPlane()
